@@ -20,7 +20,6 @@
 #endif
 
 ////////////////// COROUTINE CONTEXTS ///////////////////////////////
-CORO_CONTEXT(coro_throw);
 CORO_CONTEXT(coro_detect_line);
 CORO_CONTEXT(coro_detect_wall);
 CORO_CONTEXT(coro_drive_forever);
@@ -40,6 +39,8 @@ int lines_detected = 0;
 int wall_detected = 0;
 bool ball_detected = false;
 
+// Author: Maryam
+/// @brief Initialization of motors, sensors etc
 int app_init(void)
 {
     printf("app_init() ... \n");
@@ -107,6 +108,9 @@ int app_init(void)
     return (1);
 }
 
+/// @brief Function for running 2 motors indefinitly 
+/// @param l_speed the input speed of the left wheel 
+/// @param r_speed the input speed of the right wheel 
 static void run_forever(int l_speed, int r_speed)
 {
     printf("run_forever()... \n");
@@ -117,6 +121,7 @@ static void run_forever(int l_speed, int r_speed)
     set_tacho_command_inx(sn_right, TACHO_RUN_FOREVER);
 }
 
+/// @brief Stops both wheels at the same time by resetting the motors
 static void stop_run()
 {
     printf("stop_run()... \n");
@@ -125,6 +130,10 @@ static void stop_run()
     set_tacho_command_inx(sn_right, TACHO_RESET);
 }
 
+/// @brief Function for running 2 motors for a given time period  
+/// @param l_speed The speed of the left motor
+/// @param r_speed The speed of the right motor
+/// @param time The time period in which the motors should run
 static void run_timed(int l_speed, int r_speed, int time)
 {
     printf("run_timed()... \n");
@@ -137,6 +146,11 @@ static void run_timed(int l_speed, int r_speed, int time)
     set_tacho_command_inx(sn_right, TACHO_RUN_TIMED);
 }
 
+/// @brief Function to control a single motor given a time period
+/// @param sn the port of the motor
+/// @param time the time in which the motor should run
+/// @param speed_perc Specifies the direction of the motor
+/// @return returns a simple int
 int move_motor(uint8_t sn, int time, float speed_perc)
 {
     printf("move_motor()... \n");
@@ -163,6 +177,7 @@ int move_motor(uint8_t sn, int time, float speed_perc)
     return 0;
 }
 
+/// @brief Function for detecting spherical objects by checking for a drop in distande measured while scanning. 
 void detect_ball()
 {
     printf("detect_ball()... \n");
@@ -207,6 +222,8 @@ void detect_ball()
     }
 }
 
+/// @brief Controls the claw by opening and closing it
+/// @param open True if we want to open the claw
 void open_claw(bool open)
 {
     printf("open_claw()... \n");
@@ -220,6 +237,7 @@ void open_claw(bool open)
     }
 }
 
+/// @brief Function for moving the arm up and down in order to replicate a throwing movement
 void throw()
 {
     printf("throw()... \n");
@@ -228,6 +246,7 @@ void throw()
     open_claw(true);
 }
 
+/// @brief Function for controlling the clas in order to replicate a grabbing movement
 void grab()
 {
     printf("grab()... \n");
@@ -239,7 +258,7 @@ void grab()
     open_claw(false);                      // Close claw
 }
 
-// Dummy function for detecting and fetching a ball
+/// @brief Used to scan for spherical objects and grab it if it has been detected
 void detect_and_fetch()
 {
     printf("detect_and_fetch()... \n");
@@ -253,19 +272,7 @@ void detect_and_fetch()
     ball_detected = false;
 }
 
-CORO_DEFINE(coro_throw)
-{
-    CORO_BEGIN();
-    printf("coro_throw()... \n");
-    for (;;)
-    {
-        throw();
-        CORO_YIELD();
-    }
-    CORO_END();
-}
-
-// For detecting black lines with color sensor
+/// @brief For detecting black lines with color sensor
 CORO_DEFINE(coro_detect_line)
 {
     CORO_BEGIN();
@@ -292,7 +299,7 @@ CORO_DEFINE(coro_detect_line)
     }
 }
 
-// For not crashing into a wall
+/// @brief For detecting obstacles that are too close. 
 CORO_DEFINE(coro_detect_wall)
 {
     CORO_BEGIN();
@@ -315,7 +322,7 @@ CORO_DEFINE(coro_detect_wall)
     CORO_END();
 }
 
-// For running both wheels forever
+/// @brief For running both wheels forever
 CORO_DEFINE(coro_drive_forever)
 {
 
