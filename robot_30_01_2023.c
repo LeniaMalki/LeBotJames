@@ -41,7 +41,7 @@ bool ball_detected = false;
 int turn_to_ball = 0;
 
 /// @brief Initialization of motors, sensors etc
-/// @authors: Maryam, Ludovic
+/// @authors: Maryam
 int app_init(void)
 {
     printf("app_init() ... \n");
@@ -457,7 +457,7 @@ CORO_DEFINE(coro_detect_line)
 }
 
 /// @brief For detecting obstacles that are too close using sonar.
-/// @authors Alberto, Lenia
+/// @authors Alberto, Lenia, Ludovic
 CORO_DEFINE(coro_detect_wall)
 {
     CORO_BEGIN();
