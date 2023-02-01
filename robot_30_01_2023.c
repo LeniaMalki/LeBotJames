@@ -38,6 +38,7 @@ float ball_distance = 0;
 int lines_detected = 0;
 int wall_detected = 0;
 bool ball_detected = false;
+int turn_to_ball = 0;
 
 /// @brief Initialization of motors, sensors etc
 /// @author: Maryam
@@ -59,7 +60,7 @@ int app_init(void)
 
     if (!(ev3_search_tacho_plugged_in(65, 0, &sn_left, 0) && ev3_search_tacho_plugged_in(66, 0, &sn_arm, 0) && ev3_search_tacho_plugged_in(67, 0, &sn_claw, 0) && ev3_search_tacho_plugged_in(68, 0, &sn_right, 0)))
     {
-        printf("ERROR: A motor is not found\n");
+        printf("ERROR: motor is not found\n");
         return (1);
     }
 
@@ -104,8 +105,12 @@ int app_init(void)
 
         fflush(stdout);
     }
+    else
+    {
+        return (1);
+    }
 
-    return (1);
+    return (0);
 }
 
 /// @brief Function for running 2 motors indefinitly
@@ -116,8 +121,8 @@ static void run_forever(int l_speed, int r_speed)
 {
     printf("run_forever()... \n");
 
-    set_tacho_speed_sp(sn_left, l_speed * 0.3);
-    set_tacho_speed_sp(sn_right, r_speed * 0.3);
+    set_tacho_speed_sp(sn_left, l_speed * 0.2);
+    set_tacho_speed_sp(sn_right, r_speed * 0.2);
     set_tacho_command_inx(sn_left, TACHO_RUN_FOREVER);
     set_tacho_command_inx(sn_right, TACHO_RUN_FOREVER);
 }
@@ -203,7 +208,7 @@ void detect_ball()
         printf("NEW VALUE = %f \n", new_value);
 
         // If the ball has been detected
-        if (new_value - old_value > 30 || old_value - new_value > 30 || new_value > 1000)
+        if (new_value - old_value > 20 || old_value - new_value > 20 || new_value > 1000)
         {
             // check_line = 1;
             printf("---BALL DETECTED-----\n");
@@ -218,7 +223,6 @@ void detect_ball()
         if (counter <= 15)
         {
             printf("left \n");
-            // move_motor(sn_right,50,1);
             run_timed(0, speed_motor, 50);
         }
 
@@ -226,9 +230,9 @@ void detect_ball()
         else
         {
             printf("right \n");
-            //            move_motor(sn_left,50,1);
             run_timed(speed_motor, 0, 50);
         }
+
         sleep(1);
     }
 }
@@ -253,10 +257,12 @@ void open_claw(bool open)
 /// @author
 void throw()
 {
+   // move_motor(sn_left, 1200, (float)1 / 2);
     printf("throw()... \n");
+    sleep(2);
     move_motor(sn_arm, 630, -1); // Move arm up
     sleep(1);
-    open_claw(true);
+    // open_claw(true);
 }
 
 /// @brief Function for controlling the clas in order to replicate a grabbing movement
@@ -284,57 +290,163 @@ void detect_and_fetch()
 {
     printf("detect_and_fetch()... \n");
     detect_ball();
+
+    // Once ball is detected
     if (ball_detected)
     {
         float temp_distance = 300.5;
         int speed_motor;
         get_tacho_max_speed(sn_right, &speed_motor);
-        run_timed(-speed_motor, -speed_motor, 1600); // Move  back
-        printf("ball_distance: %f \n", ball_distance);
-        sleep(1);
-        // move_motor(sn_left, 80, 1); // Rotate right to position arm above ball
+        run_timed(-speed_motor, -speed_motor, 2000); // Move  back
 
+        printf("ball_distance: %f \n", ball_distance);
+        sleep(2);
+        run_timed(speed_motor, 0, 75); // Rotate right to position arm above ball
+        sleep(2);
         open_claw(true);
         move_motor(sn_arm, 600, (float)1 / 9); // Move arm down
         sleep(1);
 
+        // Go straight until the distance is enough close
         run_forever(speed_motor, speed_motor);
         while (temp_distance >= 230)
         {
             printf("checking distance \n");
             get_sensor_value0(sensor_sonar, &temp_distance);
         }
+        // start grabbing the ball
+        stop_run();
+        sleep(0.2);
         grab();
         printf("final position \n");
-        stop_run();
-        // grab(); // Makes us rotate right to position arm above ball
+        // stopping to run
         sleep(1);
+
+        // Go back in order to avoid touching the wall and be blocked
         run_timed(-speed_motor, -speed_motor, 600); // go back
-        throw();
+
+        //        throw();
     }
     ball_detected = false;
 }
 
-/// @brief For detecting black lines with color sensor
+static void defender_strategy()
+{
+    int speed_motor;
+    float turn_distance = 300;
+    int stop_color = 5;
+
+    int white_black = 0;
+
+    get_tacho_max_speed(sn_right, &speed_motor);
+    // Go straight until the middle
+    run_forever(speed_motor, speed_motor);
+    int black_lines = 0;
+    while (true)
+    {
+        // sleep(0.5);
+        get_sensor_value(0, sensor_color, &stop_color);
+        printf("color  IS %d \n", stop_color);
+
+        if (stop_color <= 3)
+        {
+            white_black = 1;
+            black_lines++;
+            sleep(2);
+        }
+        if (stop_color > 3)
+        {
+            white_black = 0;
+        }
+        if (black_lines == 1)
+        {
+            break;
+        }
+    }
+    stop_run();
+    sleep(2);
+
+    // turn right
+    run_timed(speed_motor, -speed_motor, 520);
+    sleep(1);
+
+    // go straight until the wall is detected
+    run_forever(speed_motor, speed_motor);
+    sleep(1);
+    printf("BEfore while: %f", turn_distance);
+    while (turn_distance > 200)
+    {
+        printf("TURN DISTANCE IS %f \n", turn_distance);
+        get_sensor_value0(sensor_sonar, &turn_distance);
+    }
+    stop_run();
+    sleep(1);
+    // Turn right
+    run_timed(speed_motor, -speed_motor, 520);
+    sleep(1);
+    turn_distance = 500;
+
+    // Go straight until the wall is detected
+    run_forever(speed_motor, speed_motor);
+
+    while (turn_distance > 200)
+    {
+        //            printf("TURN DISTANCE IS %f \n",turn_distance);
+        get_sensor_value0(sensor_sonar, &turn_distance);
+    }
+    stop_run();
+    sleep(1);
+    printf("SHOULD TURN \n");
+    run_timed(speed_motor, -speed_motor, 520);
+    sleep(2);
+
+    // From now, the robot will continously going straight and back to prevent the adversary scoring
+    while (true)
+    {
+        printf("Infinite loop \n");
+        turn_distance = 400;
+        run_forever(speed_motor, speed_motor);
+        // sleep(2);
+        while (turn_distance > 300)
+        {
+            printf("TURN DISTANCE IS %f \n", turn_distance);
+            get_sensor_value0(sensor_sonar, &turn_distance);
+        }
+        sleep(1);
+        stop_run();
+        printf("last rotation\n");
+        run_timed(speed_motor, 0, 1200);
+        sleep(1.5);
+    }
+
+    return;
+}
 /// @author
 CORO_DEFINE(coro_detect_line)
 {
     CORO_BEGIN();
+
     printf("coro_detect_line()... \n");
     for (;;)
     {
-        if (!get_sensor_value(0, sensor_color, &color_value) || (color_value < 0) || (color_value >= COLOR_COUNT))
+//      sleep(2);
+     if (!get_sensor_value(0, sensor_color, &color_value) || (color_value < 0) || (color_value >= COLOR_COUNT))
         {
             color_value = 0;
         }
-
+        printf("color is %d\n",color_value);
         if (color_value < 3) // Black line detected
         {
-            lines_detected++;
-
             printf("Black line detected... stop. \n");
-            stop_run();
-            move_motor(sn_right, 580, 1); // Turn left
+            //stop_run();
+            sleep(1.5);
+            lines_detected++;
+        }
+
+        if (lines_detected == 2)
+        {
+        stop_run();
+            turn_to_ball = 1;
         }
 
         CORO_YIELD();
@@ -350,11 +462,12 @@ CORO_DEFINE(coro_detect_wall)
     for (;;)
     {
         get_sensor_value0(sensor_sonar, &distance);
-        if (distance < 200)
+        if (distance < 300)
         {
-            wall_detected = 1;
+            wall_detected++;
             printf("STOP! Distance is: %f \n", distance);
             stop_run();
+            sleep(1);
         }
         else
         {
@@ -386,6 +499,7 @@ CORO_DEFINE(coro_drive_forever)
 
 int main(void)
 {
+    int defender = 0;
     printf("Waiting the EV3 brick online...\n");
     if (ev3_init() < 1)
         return (1);
@@ -393,53 +507,81 @@ int main(void)
     ev3_sensor_init();
     ev3_tacho_init();
     app_alive = app_init();
-
+    printf("app_alive = %d\n", app_alive);
     int cc = 0;
     open_claw(false);
     open_claw(false);
-    open_claw(false);
+    /* open_claw(true);
+     sleep(3);
+     open_claw(false);
+     throw();
+     sleep(5);
+     if(defender==1){
+         defender_strategy();
+     }*/
 
-    while (app_alive)
+    while (app_alive == 0)
     {
-        /*
-        /*
-         if (lines_detected == 0)
-                {
-                    CORO_CALL(coro_drive_forever);
-                    CORO_CALL(coro_detect_line);
-                }
-                if (lines_detected == 1 && wall_detected == 0)
-                {
-                    CORO_CALL(coro_drive_forever);
-                    CORO_CALL(coro_detect_wall);
-                }
-                if (wall_detected == 0)
-                {
-        //          CORO_CALL(coro_drive_forever);
-        //            CORO_CALL(coro_detect_wall);
-        //            printf("wall_detected == 1 \n");
-           //         detect_and_fetch();
-                }
-                if(wall_detected==1 && cc==0){
 
-                  detect_and_fetch();
-                  cc++;
-                }
-        */
-
-        //     detect_ball();
-        //   sleep(10);
-
-        if (wall_detected == 0)
+        // Starting position --> run & start detect lines
+        if (lines_detected < 2)
         {
+            printf("Starting detecting line \n");
+            CORO_CALL(coro_drive_forever);
+            CORO_CALL(coro_detect_line);
+       }
+        // When we  detect x lines, we have detected the second line (we are in the middle);
+        if (lines_detected == 2 && wall_detected == 0)
+        {
+            // Before starting detecting the wall we turn
+            if (turn_to_ball == 1)
+            {
+                move_motor(sn_right, 530,  1); // Turn left
+                sleep(2);
+                turn_to_ball = 0;
+            }
+            printf("Turning and detecting the wall \n");
+            sleep(1);
+            // RUN until the wall is detcted
             CORO_CALL(coro_drive_forever);
             CORO_CALL(coro_detect_wall);
         }
-        if (wall_detected == 1 && cc == 0)
+
+        // When we detect the wall,
+        if (wall_detected == 1)
         {
+
+            printf("Detecting the ball \n");
+            // detect the ball and grabb it
             detect_and_fetch();
-            cc++;
+            printf("STOP THE APPLICATION \n");
+             int max_speed_L;
+        int max_speed_R;
+        get_tacho_max_speed(sn_left, &max_speed_L);
+        get_tacho_max_speed(sn_right, &max_speed_R);
+        run_timed(-max_speed_L,0,600);
+        sleep(1);
+        run_timed(-max_speed_L,-max_speed_R,200);
+        throw();
+            sleep(100);
         }
+        //      if(wall_detected==2){
+        //        detect_and_fetch();
+        //        printf("STOP APPLICATION \n");
+        //        sleep(100);
+        //      }
+
+        //     detect_ball();
+        //   sleep(10);
+        /*
+                if(wall_detected==0){
+                CORO_CALL(coro_drive_forever);
+                CORO_CALL(coro_detect_wall);
+                }
+                if(wall_detected==1 && cc==0){
+                detect_and_fetch();
+                cc++;}
+        */
     }
     ev3_uninit();
     printf("*** ( EV3 ) Bye! ***\n");
