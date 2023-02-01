@@ -41,7 +41,7 @@ bool ball_detected = false;
 int turn_to_ball = 0;
 
 /// @brief Initialization of motors, sensors etc
-/// @author: Maryam
+/// @authors: Maryam, Ludovic
 int app_init(void)
 {
     printf("app_init() ... \n");
@@ -116,7 +116,7 @@ int app_init(void)
 /// @brief Function for running 2 motors indefinitly
 /// @param l_speed the input speed of the left wheel
 /// @param r_speed the input speed of the right wheel
-/// @author
+/// @authors Alberto, Lenia
 static void run_forever(int l_speed, int r_speed)
 {
     printf("run_forever()... \n");
@@ -128,7 +128,7 @@ static void run_forever(int l_speed, int r_speed)
 }
 
 /// @brief Stops both wheels at the same time by resetting the motors
-/// @author
+/// @authors Alberto, Lenia
 static void stop_run()
 {
     printf("stop_run()... \n");
@@ -141,7 +141,7 @@ static void stop_run()
 /// @param l_speed The speed of the left motor
 /// @param r_speed The speed of the right motor
 /// @param time The time period in which the motors should run
-/// @author
+/// @authors Ludovic, Lenia
 static void run_timed(int l_speed, int r_speed, int time)
 {
     printf("run_timed()... \n");
@@ -159,7 +159,7 @@ static void run_timed(int l_speed, int r_speed, int time)
 /// @param time the time in which the motor should run
 /// @param speed_perc Specifies the direction of the motor
 /// @return returns a simple int
-/// @author
+/// @authors Ludovic, Alberto
 int move_motor(uint8_t sn, int time, float speed_perc)
 {
     printf("move_motor()... \n");
@@ -187,7 +187,7 @@ int move_motor(uint8_t sn, int time, float speed_perc)
 }
 
 /// @brief Function for detecting spherical objects by checking for a drop in distande measured while scanning.
-/// @author
+/// @authors Ludovic, Lenia
 void detect_ball()
 {
     printf("detect_ball()... \n");
@@ -239,7 +239,7 @@ void detect_ball()
 
 /// @brief Controls the claw by opening and closing it
 /// @param open True if we want to open the claw
-/// @author
+/// @authors Ludovic, Alberto
 void open_claw(bool open)
 {
     printf("open_claw()... \n");
@@ -254,8 +254,8 @@ void open_claw(bool open)
 }
 
 /// @brief Function for moving the arm up and down in order to replicate a throwing movement
-/// @author
-void throw()
+/// @authorss Alberto, Lenia
+void throw()  
 {
    // move_motor(sn_left, 1200, (float)1 / 2);
     printf("throw()... \n");
@@ -266,7 +266,7 @@ void throw()
 }
 
 /// @brief Function for controlling the clas in order to replicate a grabbing movement
-/// @author
+/// @authors Ludovic, Alberto 
 void grab()
 {
     int speed_motor;
@@ -285,7 +285,7 @@ void grab()
 }
 
 /// @brief Used to scan for spherical objects and grab it if it has been detected
-/// @author
+/// @authors Ludovic, Lenia
 void detect_and_fetch()
 {
     printf("detect_and_fetch()... \n");
@@ -330,6 +330,8 @@ void detect_and_fetch()
     ball_detected = false;
 }
 
+/// @brief 
+/// @authors Ludovic, Alberto
 static void defender_strategy()
 {
     int speed_motor;
@@ -421,7 +423,8 @@ static void defender_strategy()
 
     return;
 }
-/// @author
+
+/// @authors Ludovic, Lenia
 CORO_DEFINE(coro_detect_line)
 {
     CORO_BEGIN();
@@ -453,8 +456,8 @@ CORO_DEFINE(coro_detect_line)
     }
 }
 
-/// @brief For detecting obstacles that are too close.
-/// @author
+/// @brief For detecting obstacles that are too close using sonar.
+/// @authors Alberto, Lenia
 CORO_DEFINE(coro_detect_wall)
 {
     CORO_BEGIN();
@@ -479,7 +482,7 @@ CORO_DEFINE(coro_detect_wall)
 }
 
 /// @brief For running both wheels forever
-/// @author
+/// @authors Alberto, Lenia
 CORO_DEFINE(coro_drive_forever)
 {
 
@@ -497,6 +500,7 @@ CORO_DEFINE(coro_drive_forever)
     CORO_END();
 }
 
+/// @authorss Alberto, Lenia, Ludovic 
 int main(void)
 {
     int defender = 0;
