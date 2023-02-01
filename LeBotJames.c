@@ -41,7 +41,7 @@ bool ball_detected = false;
 int turn_to_ball = 0;
 
 /// @brief Initialization of motors, sensors etc
-/// @authors: Maryam
+/// @author Maryam
 int app_init(void)
 {
     printf("app_init() ... \n");
@@ -254,10 +254,10 @@ void open_claw(bool open)
 }
 
 /// @brief Function for moving the arm up and down in order to replicate a throwing movement
-/// @authorss Alberto, Lenia
-void throw()  
+/// @authors Alberto, Lenia
+void throw()
 {
-   // move_motor(sn_left, 1200, (float)1 / 2);
+    // move_motor(sn_left, 1200, (float)1 / 2);
     printf("throw()... \n");
     sleep(2);
     move_motor(sn_arm, 630, -1); // Move arm up
@@ -266,7 +266,7 @@ void throw()
 }
 
 /// @brief Function for controlling the clas in order to replicate a grabbing movement
-/// @authors Ludovic, Alberto 
+/// @authors Ludovic, Alberto
 void grab()
 {
     int speed_motor;
@@ -330,7 +330,7 @@ void detect_and_fetch()
     ball_detected = false;
 }
 
-/// @brief 
+/// @brief The strategy for acting as a defender
 /// @authors Ludovic, Alberto
 static void defender_strategy()
 {
@@ -424,6 +424,7 @@ static void defender_strategy()
     return;
 }
 
+/// @brief For detecting black lines
 /// @authors Ludovic, Lenia
 CORO_DEFINE(coro_detect_line)
 {
@@ -432,23 +433,23 @@ CORO_DEFINE(coro_detect_line)
     printf("coro_detect_line()... \n");
     for (;;)
     {
-//      sleep(2);
-     if (!get_sensor_value(0, sensor_color, &color_value) || (color_value < 0) || (color_value >= COLOR_COUNT))
+        //      sleep(2);
+        if (!get_sensor_value(0, sensor_color, &color_value) || (color_value < 0) || (color_value >= COLOR_COUNT))
         {
             color_value = 0;
         }
-        printf("color is %d\n",color_value);
+        printf("color is %d\n", color_value);
         if (color_value < 3) // Black line detected
         {
             printf("Black line detected... stop. \n");
-            //stop_run();
+            // stop_run();
             sleep(1.5);
             lines_detected++;
         }
 
         if (lines_detected == 2)
         {
-        stop_run();
+            stop_run();
             turn_to_ball = 1;
         }
 
@@ -500,7 +501,7 @@ CORO_DEFINE(coro_drive_forever)
     CORO_END();
 }
 
-/// @authorss Alberto, Lenia, Ludovic 
+/// @authors Alberto, Lenia, Ludovic
 int main(void)
 {
     int defender = 0;
@@ -533,14 +534,14 @@ int main(void)
             printf("Starting detecting line \n");
             CORO_CALL(coro_drive_forever);
             CORO_CALL(coro_detect_line);
-       }
+        }
         // When we  detect x lines, we have detected the second line (we are in the middle);
         if (lines_detected == 2 && wall_detected == 0)
         {
             // Before starting detecting the wall we turn
             if (turn_to_ball == 1)
             {
-                move_motor(sn_right, 530,  1); // Turn left
+                move_motor(sn_right, 530, 1); // Turn left
                 sleep(2);
                 turn_to_ball = 0;
             }
@@ -559,14 +560,14 @@ int main(void)
             // detect the ball and grabb it
             detect_and_fetch();
             printf("STOP THE APPLICATION \n");
-             int max_speed_L;
-        int max_speed_R;
-        get_tacho_max_speed(sn_left, &max_speed_L);
-        get_tacho_max_speed(sn_right, &max_speed_R);
-        run_timed(-max_speed_L,0,600);
-        sleep(1);
-        run_timed(-max_speed_L,-max_speed_R,200);
-        throw();
+            int max_speed_L;
+            int max_speed_R;
+            get_tacho_max_speed(sn_left, &max_speed_L);
+            get_tacho_max_speed(sn_right, &max_speed_R);
+            run_timed(-max_speed_L, 0, 600);
+            sleep(1);
+            run_timed(-max_speed_L, -max_speed_R, 200);
+            throw();
             sleep(100);
         }
         //      if(wall_detected==2){
